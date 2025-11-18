@@ -21,8 +21,29 @@ public static class SetsAndMaps
     /// <param name="words">An array of 2-character words (lowercase, no duplicates)</param>
     public static string[] FindPairs(string[] words)
     {
-        // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        var set = new HashSet<string>(words);
+        var result = new List<string>();
+        var added = new HashSet<string>();
+
+        foreach (var w in words)
+        {
+            if (w.Length != 2) continue;
+            if (w[0] == w[1]) continue;
+
+            var reversed = new string(new[] { w[1], w[0] });
+            if (set.Contains(reversed))
+            {
+                var a = string.CompareOrdinal(w, reversed) < 0 ? w : reversed;
+                var b = a == w ? reversed : w;
+                var key = a + "&" + b;
+                if (added.Add(key))
+                {
+                    result.Add($"{a} & {b}");
+                }
+            }
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>
@@ -42,7 +63,14 @@ public static class SetsAndMaps
         foreach (var line in File.ReadLines(filename))
         {
             var fields = line.Split(",");
-            // TODO Problem 2 - ADD YOUR CODE HERE
+            if (fields.Length > 3)
+            {
+                var degree = fields[3].Trim();
+                if (degrees.TryGetValue(degree, out var count))
+                    degrees[degree] = count + 1;
+                else
+                    degrees[degree] = 1;
+            }
         }
 
         return degrees;
@@ -66,8 +94,28 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+        // Count characters ignoring spaces and case
+        var counts = new int[char.MaxValue + 1];
+
+        for (int i = 0; i < word1.Length; i++)
+        {
+            char c = char.ToLowerInvariant(word1[i]);
+            if (c == ' ') continue;
+            counts[c]++;
+        }
+
+        for (int i = 0; i < word2.Length; i++)
+        {
+            char c = char.ToLowerInvariant(word2[i]);
+            if (c == ' ') continue;
+            counts[c]--;
+        }
+
+        for (int i = 0; i < counts.Length; i++)
+        {
+            if (counts[i] != 0) return false;
+        }
+        return true;
     }
 
     /// <summary>
@@ -95,12 +143,18 @@ public static class SetsAndMaps
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
         var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
+        if (featureCollection?.Features == null)
+            return Array.Empty<string>();
 
-        // TODO Problem 5:
-        // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
-        // on those classes so that the call to Deserialize above works properly.
-        // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
-        // 3. Return an array of these string descriptions.
-        return [];
+        var list = new List<string>();
+        foreach (var f in featureCollection.Features)
+        {
+            var place = f?.Properties?.Place ?? "";
+            var mag = f?.Properties?.Mag;
+            if (string.IsNullOrWhiteSpace(place) || mag == null)
+                continue;
+            list.Add($"{place} - Mag {mag.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+        return list.ToArray();
     }
 }
